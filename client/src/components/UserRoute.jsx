@@ -2,17 +2,24 @@ import { Navigate } from "react-router-dom";
 
 const UserRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/user-login" replace />;
   }
 
-  if (role !== "user") {
+  try {
+    const decoded = JSON.parse(atob(token.split(".")[1]));
+
+    if (decoded.role !== "user") {
+      return <Navigate to="/" replace />;
+    }
+
+    return children;
+
+  } catch {
+    localStorage.clear();
     return <Navigate to="/" replace />;
   }
-
-  return children;
 };
 
 export default UserRoute;
