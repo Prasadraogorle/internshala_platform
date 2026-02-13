@@ -1,78 +1,139 @@
 import logo from "../assets/intern logo.png";
+import { Link, useNavigate } from "react-router-dom";
 
 function Navbar() {
-  return (
-    <nav className="w-full h-16 bg-white border-b flex items-center px-6">
-      
-      {/* Logo */}
-      <img
-        src={logo}
-        alt="Intern Logo"
-        className="h-10 w-auto max-w-[180px] object-contain"
-      />
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-      {/* Menu: Internships & Jobs */}
-      <div
-        style={{ marginLeft: "48px", display: "flex", alignItems: "center" }}
-      >
-        <span
-          style={{
-            marginRight: "48px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-          }}
-          className="hover:text-blue-600"
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+
+  return (
+    <nav className="w-full h-16 bg-gradient-to-r from-[#ffffff] via-[#a7bc5b]/30 to-[#8da242]/40 shadow-md flex items-center px-8">
+
+      {/* Logo */}
+      <Link to="/" className="flex items-center">
+        <img
+          src={logo}
+          alt="Intern Logo"
+          className="h-10 w-auto object-contain"
+        />
+      </Link>
+
+      {/* Menu */}
+      <div className="ml-12 flex items-center gap-12 font-medium text-[#2d2d2d]">
+        <Link
+          to="/internships"
+          className="flex items-center hover:text-[#8da242] transition"
         >
           Internships
           <i className="bi bi-caret-down-fill ml-2 text-xs"></i>
-        </span>
+        </Link>
 
-        <span
-          style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
-          className="hover:text-blue-600"
+        <Link
+          to="/jobs"
+          className="flex items-center hover:text-[#8da242] transition"
         >
           Jobs
           <i className="bi bi-caret-down-fill ml-2 text-xs"></i>
-        </span>
+        </Link>
       </div>
 
       {/* Search */}
-      <div className="ml-auto flex items-center border rounded-md px-3 py-1">
-        <i className="bi bi-search text-gray-500 mr-2"></i>
+      <div className="ml-auto flex items-center bg-white/80 backdrop-blur-sm border border-[#a7bc5b] rounded-full px-4 py-1 shadow-sm">
+        <i className="bi bi-search text-[#8da242] mr-2"></i>
         <input
           type="text"
           placeholder="Search"
-          className="outline-none text-sm w-48"
+          className="outline-none text-sm w-48 bg-transparent placeholder:text-[#8da242]/70"
         />
       </div>
 
-      {/* RIGHT SIDE BUTTONS */}
-      <div
-        style={{
-          marginLeft: "48px",
-          display: "flex",
-          alignItems: "center",
-          gap: "32px", // 👈 CLEAR GAP BETWEEN ALL BUTTONS
-        }}
-      >
-        <button className="text-gray-700 hover:text-blue-600">
-          Login
-        </button>
+      {/* Right Side */}
+      <div className="ml-10 flex items-center gap-6 font-medium">
 
-        <button className="text-gray-700 hover:text-blue-600">
-          Hire Talent
-        </button>
+        {/* 🔓 NOT LOGGED IN */}
+        {!token && (
+          <>
+            <Link
+              to="/user-login"
+              className="text-[#2d2d2d] hover:text-[#8da242] transition"
+            >
+              User Login
+            </Link>
 
-        <button className="text-gray-700 hover:text-blue-600">
-          Register
-        </button>
+            <Link
+              to="/admin-login"
+              className="text-[#2d2d2d] hover:text-[#8da242] transition"
+            >
+              Admin Login
+            </Link>
 
-        <button className="text-gray-700 hover:text-blue-600">
-          Admin
-        </button>
+            <Link
+              to="/register"
+              className="bg-[#8da242] hover:bg-[#a7bc5b] text-white px-4 py-1.5 rounded-full transition shadow"
+            >
+              Register
+            </Link>
+          </>
+        )}
+
+        {/* 👤 USER LOGGED IN */}
+        {token && role === "user" && (
+          <>
+            <span className="bg-[#a7bc5b]/30 text-[#8da242] px-3 py-1 rounded-full text-sm font-semibold">
+              User Panel
+            </span>
+
+            <Link
+              to="/my-applications"
+              className="hover:text-[#8da242] transition"
+            >
+              My Applications
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="bg-[#8da242] hover:bg-[#a7bc5b] text-white px-4 py-1.5 rounded-full transition shadow"
+            >
+              Logout
+            </button>
+          </>
+        )}
+
+        {/* 👑 ADMIN LOGGED IN */}
+        {token && role === "admin" && (
+          <>
+            <span className="bg-[#8da242]/30 text-[#2d2d2d] px-3 py-1 rounded-full text-sm font-semibold">
+              Admin Panel
+            </span>
+
+            <Link
+              to="/add-internship"
+              className="hover:text-[#8da242] transition"
+            >
+              Add Internship
+            </Link>
+
+            <Link
+              to="/admin-dashboard"
+              className="hover:text-[#8da242] transition"
+            >
+              Applications
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="bg-[#8da242] hover:bg-[#a7bc5b] text-white px-4 py-1.5 rounded-full transition shadow"
+            >
+              Logout
+            </button>
+          </>
+        )}
       </div>
-
     </nav>
   );
 }
