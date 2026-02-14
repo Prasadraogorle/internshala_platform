@@ -12,6 +12,11 @@ const applicationSchema = new mongoose.Schema(
       ref: "Internship",
       required: true,
     },
+    job: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Job",
+},
+
     status: {
       type: String,
       enum: ["applied", "reviewed", "accepted", "rejected"],

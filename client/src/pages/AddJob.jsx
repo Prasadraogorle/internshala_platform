@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const AddInternship = () => {
+const AddJob = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -9,7 +9,7 @@ const AddInternship = () => {
     title: "",
     company: "",
     location: "",
-    stipend: "",
+    salary: "",
   });
 
   const [error, setError] = useState("");
@@ -27,30 +27,27 @@ const AddInternship = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:5000/api/internships",
+        "http://localhost:5000/api/jobs",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,   // ✅ REQUIRED
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            ...formData,
-            stipend: Number(formData.stipend),
-          }),
+          body: JSON.stringify(formData),
         }
       );
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Failed to add internship");
+        setError(data.message || "Failed to add job");
         return;
       }
 
-      navigate("/internships");
+      navigate("/jobs");
 
-    } catch (error) {
+    } catch {
       setError("Server error");
     }
   };
@@ -60,7 +57,7 @@ const AddInternship = () => {
       <div className="w-full max-w-xl bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-[#a7bc5b]/40">
 
         <h1 className="text-3xl font-bold text-center text-[#2d2d2d] mb-8">
-          Add Internship
+          Add Job
         </h1>
 
         {error && (
@@ -72,7 +69,7 @@ const AddInternship = () => {
           <input
             type="text"
             name="title"
-            placeholder="Internship Title"
+            placeholder="Job Title"
             value={formData.title}
             onChange={handleChange}
             required
@@ -100,10 +97,10 @@ const AddInternship = () => {
           />
 
           <input
-            type="number"
-            name="stipend"
-            placeholder="Stipend"
-            value={formData.stipend}
+            type="text"
+            name="salary"
+            placeholder="Salary"
+            value={formData.salary}
             onChange={handleChange}
             required
             className="w-full border border-[#a7bc5b] p-3 rounded-xl"
@@ -113,7 +110,7 @@ const AddInternship = () => {
             type="submit"
             className="w-full bg-gradient-to-r from-[#a7bc5b] to-[#8da242] text-white font-semibold py-3 rounded-xl shadow-md"
           >
-            Add Internship
+            Add Job
           </button>
 
         </form>
@@ -122,4 +119,4 @@ const AddInternship = () => {
   );
 };
 
-export default AddInternship;
+export default AddJob;
