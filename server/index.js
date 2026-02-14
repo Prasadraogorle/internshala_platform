@@ -8,6 +8,7 @@ const { OAuth2Client } = require("google-auth-library");
 
 const User = require("./models/User");
 const Internship = require("./models/Internship");
+const Job = require("./models/Job");
 const Application = require("./models/Application");
 
 const auth = require("./middleware/auth");
@@ -31,22 +32,45 @@ mongoose
    PUBLIC ROUTES
 ========================= */
 
+// ===== Internships =====
 app.get("/api/internships", async (req, res) => {
   try {
     const internships = await Internship.find();
     res.json(internships);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch {
+    res.status(500).json({ message: "Failed to fetch internships" });
   }
 });
 
 app.get("/api/internships/:id", async (req, res) => {
   try {
     const internship = await Internship.findById(req.params.id);
-    if (!internship) {
+    if (!internship)
       return res.status(404).json({ message: "Internship not found" });
-    }
+
     res.json(internship);
+  } catch {
+    res.status(400).json({ message: "Invalid ID" });
+  }
+});
+
+// ===== Jobs =====
+app.get("/api/jobs", async (req, res) => {
+  try {
+    const jobs = await Job.find();
+    res.json(jobs);
+  } catch {
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+});
+
+app.get("/api/jobs/:id", async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job)
+      return res.status(404).json({ message: "Job not found" });
+
+    res.json(job);
   } catch {
     res.status(400).json({ message: "Invalid ID" });
   }
@@ -56,15 +80,13 @@ app.get("/api/internships/:id", async (req, res) => {
    AUTH ROUTES
 ========================= */
 
-// REGISTER (User Only)
 app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     const exists = await User.findOne({ email });
-    if (exists) {
+    if (exists)
       return res.status(400).json({ message: "User already exists" });
-    }
 
     const hashed = await bcrypt.hash(password, 10);
 
@@ -76,34 +98,29 @@ app.post("/api/register", async (req, res) => {
     });
 
     await user.save();
-
     res.json({ message: "User registered successfully" });
+
   } catch {
     res.status(500).json({ message: "Registration failed" });
   }
 });
 
-// NORMAL LOGIN
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user)
       return res.status(400).json({ message: "User not found" });
-    }
 
-    // Prevent password login for Google accounts
-    if (!user.password) {
+    if (!user.password)
       return res.status(400).json({
         message: "Please login using Google",
       });
-    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) {
+    if (!match)
       return res.status(400).json({ message: "Invalid credentials" });
-    }
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
@@ -112,6 +129,7 @@ app.post("/api/login", async (req, res) => {
     );
 
     res.json({ token });
+
   } catch {
     res.status(500).json({ message: "Login failed" });
   }
@@ -136,16 +154,11 @@ app.post("/api/google-login", async (req, res) => {
     const email = payload.email;
     const name = payload.name;
 
-    console.log("Google login email:", email);
-    console.log("Admin email:", process.env.ADMIN_EMAIL);
-
     const isAdmin =
       email.trim().toLowerCase() ===
       process.env.ADMIN_EMAIL.trim().toLowerCase();
 
     const role = isAdmin ? "admin" : "user";
-
-    console.log("Assigned role:", role);
 
     let user = await User.findOne({ email });
 
@@ -157,7 +170,6 @@ app.post("/api/google-login", async (req, res) => {
         role,
       });
     } else {
-      // Force update role every login
       user.role = role;
     }
 
@@ -170,8 +182,8 @@ app.post("/api/google-login", async (req, res) => {
     );
 
     res.json({ token: jwtToken });
-  } catch (error) {
-    console.log("Google error:", error);
+
+  } catch {
     res.status(400).json({ message: "Google login failed" });
   }
 });
@@ -180,13 +192,14 @@ app.post("/api/google-login", async (req, res) => {
    ADMIN ROUTES
 ========================= */
 
+// Internship CRUD
 app.post("/api/internships", auth, admin, async (req, res) => {
   try {
     const internship = new Internship(req.body);
     const saved = await internship.save();
     res.status(201).json(saved);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch {
+    res.status(400).json({ message: "Failed to create internship" });
   }
 });
 
@@ -198,9 +211,8 @@ app.put("/api/internships/:id", auth, admin, async (req, res) => {
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ message: "Not found" });
-    }
+    if (!updated)
+      return res.status(404).json({ message: "Internship not found" });
 
     res.json(updated);
   } catch {
@@ -210,47 +222,76 @@ app.put("/api/internships/:id", auth, admin, async (req, res) => {
 
 app.delete("/api/internships/:id", auth, admin, async (req, res) => {
   try {
-    const deleted = await Internship.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
+    await Internship.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted successfully" });
   } catch {
     res.status(400).json({ message: "Invalid ID" });
   }
 });
 
+// Job CRUD
+app.post("/api/jobs", auth, admin, async (req, res) => {
+  try {
+    const job = new Job(req.body);
+    const saved = await job.save();
+    res.status(201).json(saved);
+  } catch {
+    res.status(400).json({ message: "Failed to create job" });
+  }
+});
+
+app.put("/api/jobs/:id", auth, admin, async (req, res) => {
+  try {
+    const updated = await Job.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updated)
+      return res.status(404).json({ message: "Job not found" });
+
+    res.json(updated);
+  } catch {
+    res.status(400).json({ message: "Invalid ID" });
+  }
+});
+
+app.delete("/api/jobs/:id", auth, admin, async (req, res) => {
+  try {
+    await Job.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted successfully" });
+  } catch {
+    res.status(400).json({ message: "Invalid ID" });
+  }
+});
+app.get("/api/my-applications", auth, async (req, res) => {
+  const applications = await Application.find({
+    user: req.user.userId,
+  })
+    .populate("internship", "title company")
+    .populate("job", "title company");
+
+  res.json(applications);
+});
+
 /* =========================
    APPLICATION ROUTES
 ========================= */
 
+// Internship Apply
 app.post("/api/apply/:internshipId", auth, async (req, res) => {
   try {
-    if (req.user.role === "admin") {
-      return res.status(403).json({
-        message: "Admin cannot apply",
-      });
-    }
-
-    const internship = await Internship.findById(req.params.internshipId);
-    if (!internship) {
-      return res.status(404).json({
-        message: "Internship not found",
-      });
-    }
+    if (req.user.role === "admin")
+      return res.status(403).json({ message: "Admin cannot apply" });
 
     const exists = await Application.findOne({
       user: req.user.userId,
       internship: req.params.internshipId,
     });
 
-    if (exists) {
-      return res.status(400).json({
-        message: "Already applied",
-      });
-    }
+    if (exists)
+      return res.status(400).json({ message: "Already applied" });
 
     const application = new Application({
       user: req.user.userId,
@@ -258,35 +299,48 @@ app.post("/api/apply/:internshipId", auth, async (req, res) => {
     });
 
     await application.save();
-
     res.json({ message: "Application submitted successfully" });
+
   } catch {
     res.status(500).json({ message: "Application failed" });
   }
 });
 
-app.get("/api/applications", auth, admin, async (req, res) => {
+// Job Apply
+app.post("/api/apply-job/:jobId", auth, async (req, res) => {
   try {
-    const applications = await Application.find()
-      .populate("user", "name email")
-      .populate("internship", "title company");
+    if (req.user.role === "admin")
+      return res.status(403).json({ message: "Admin cannot apply" });
 
-    res.json(applications);
+    const exists = await Application.findOne({
+      user: req.user.userId,
+      job: req.params.jobId,
+    });
+
+    if (exists)
+      return res.status(400).json({ message: "Already applied" });
+
+    const application = new Application({
+      user: req.user.userId,
+      job: req.params.jobId,
+    });
+
+    await application.save();
+    res.json({ message: "Job application submitted" });
+
   } catch {
-    res.status(500).json({ message: "Failed to fetch" });
+    res.status(500).json({ message: "Application failed" });
   }
 });
 
-app.get("/api/my-applications", auth, async (req, res) => {
-  try {
-    const applications = await Application.find({
-      user: req.user.userId,
-    }).populate("internship", "title company");
+// Admin view all
+app.get("/api/applications", auth, admin, async (req, res) => {
+  const applications = await Application.find()
+    .populate("user", "name email")
+    .populate("internship", "title company")
+    .populate("job", "title company");
 
-    res.json(applications);
-  } catch {
-    res.status(500).json({ message: "Failed to fetch" });
-  }
+  res.json(applications);
 });
 
 /* =========================

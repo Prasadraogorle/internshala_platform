@@ -124,6 +124,13 @@ function Navbar() {
             >
               Applications
             </Link>
+            <Link
+  to="/add-job"
+  className="hover:text-[#8da242] transition"
+>
+  Add Job
+</Link>
+
 
             <button
               onClick={handleLogout}

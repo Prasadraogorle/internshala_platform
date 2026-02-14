@@ -18,6 +18,8 @@ import AdminLogin from "./pages/AdminLogin";
 
 import AdminRoute from "./components/AdminRoute";
 import UserRoute from "./components/UserRoute";
+import AddJob from "./pages/AddJob";
+
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -120,6 +122,15 @@ function App() {
               </UserRoute>
             }
           />
+          <Route
+  path="/add-job"
+  element={
+    <AdminRoute>
+      <AddJob />
+    </AdminRoute>
+  }
+/>
+
 
         </Routes>
       </main>
