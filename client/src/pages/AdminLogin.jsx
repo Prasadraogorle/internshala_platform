@@ -67,8 +67,8 @@ const AdminLogin = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token: credentialResponse.credential,
-        }),
+  credential: credentialResponse.credential,
+}),
       });
 
       const data = await res.json();

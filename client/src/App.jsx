@@ -15,11 +15,11 @@ import MyApplications from "./pages/MyApplications";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserLogin from "./pages/UserLogin";
 import AdminLogin from "./pages/AdminLogin";
+import AddJob from "./pages/AddJob";
+import ResumeAnalysis from "./pages/ResumeAnalysis"; // ✅ FIXED IMPORT
 
 import AdminRoute from "./components/AdminRoute";
 import UserRoute from "./components/UserRoute";
-import AddJob from "./pages/AddJob";
-
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -39,7 +39,7 @@ function App() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 🔥 Smart Auto Redirect + Token Validation
+  // Smart Auto Redirect + Token Validation
   useEffect(() => {
     if (!token) return;
 
@@ -62,7 +62,6 @@ function App() {
           navigate("/internships");
         }
       }
-
     } catch (error) {
       localStorage.clear();
       navigate("/");
@@ -76,7 +75,7 @@ function App() {
       <main className="pt-4 px-6">
         <Routes>
 
-          {/* Public */}
+          {/* Public Routes */}
           <Route path="/" element={<Landingpage />} />
           <Route path="/internships" element={<Internships />} />
           <Route path="/jobs" element={<Jobs />} />
@@ -85,7 +84,7 @@ function App() {
           <Route path="/user-login" element={<UserLogin />} />
           <Route path="/admin-login" element={<AdminLogin />} />
 
-          {/* Admin Only */}
+          {/* Admin Routes */}
           <Route
             path="/admin-dashboard"
             element={
@@ -113,7 +112,16 @@ function App() {
             }
           />
 
-          {/* User Only */}
+          <Route
+            path="/add-job"
+            element={
+              <AdminRoute>
+                <AddJob />
+              </AdminRoute>
+            }
+          />
+
+          {/* User Routes */}
           <Route
             path="/my-applications"
             element={
@@ -122,15 +130,15 @@ function App() {
               </UserRoute>
             }
           />
-          <Route
-  path="/add-job"
-  element={
-    <AdminRoute>
-      <AddJob />
-    </AdminRoute>
-  }
-/>
 
+          <Route
+            path="/resume-analysis"
+            element={
+              <UserRoute>
+                <ResumeAnalysis />
+              </UserRoute>
+            }
+          />
 
         </Routes>
       </main>

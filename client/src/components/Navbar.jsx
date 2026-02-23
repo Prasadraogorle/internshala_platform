@@ -95,6 +95,13 @@ function Navbar() {
               My Applications
             </Link>
 
+            <Link
+              to="/resume-analysis"
+              className="hover:text-[#8da242] transition"
+            >
+              Resume Analysis
+            </Link>
+
             <button
               onClick={handleLogout}
               className="bg-[#8da242] hover:bg-[#a7bc5b] text-white px-4 py-1.5 rounded-full transition shadow"
@@ -119,18 +126,18 @@ function Navbar() {
             </Link>
 
             <Link
+              to="/add-job"
+              className="hover:text-[#8da242] transition"
+            >
+              Add Job
+            </Link>
+
+            <Link
               to="/admin-dashboard"
               className="hover:text-[#8da242] transition"
             >
               Applications
             </Link>
-            <Link
-  to="/add-job"
-  className="hover:text-[#8da242] transition"
->
-  Add Job
-</Link>
-
 
             <button
               onClick={handleLogout}
