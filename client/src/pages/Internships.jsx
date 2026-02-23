@@ -5,9 +5,11 @@ const Internships = () => {
   const [internshipsData, setInternshipsData] = useState([]);
   const [locationFilter, setLocationFilter] = useState("");
   const [stipendFilter, setStipendFilter] = useState("");
+  const [selectedResume, setSelectedResume] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
 
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role"); // ✅ FIXED
+  const role = localStorage.getItem("role");
 
   useEffect(() => {
     fetch("http://localhost:5000/api/internships")
@@ -29,30 +31,53 @@ const Internships = () => {
     return matchesLocation && matchesStipend;
   });
 
-  const handleDelete = async (id) => {
-    if (role !== "admin") return;
+  const handleApply = async (internshipId) => {
+    if (!token) {
+      alert("Please login to apply");
+      return;
+    }
+
+    if (role === "admin") {
+      alert("Admin cannot apply");
+      return;
+    }
+
+    if (!selectedResume) {
+      alert("Please upload your resume first");
+      return;
+    }
 
     try {
+      setLoadingId(internshipId);
+
+      const formData = new FormData();
+      formData.append("resume", selectedResume);
+
       const res = await fetch(
-        `http://localhost:5000/api/internships/${id}`,
+        `http://localhost:5000/api/apply/${internshipId}`,
         {
-          method: "DELETE",
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          body: formData,
         }
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
-        console.error("Delete failed");
+        alert(data.message || "Application failed");
         return;
       }
 
-      setInternshipsData((prev) =>
-        prev.filter((internship) => internship._id !== id)
-      );
+      alert("Applied successfully!");
+      setSelectedResume(null);
+
     } catch (error) {
-      console.error(error);
+      alert("Server error");
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -71,7 +96,7 @@ const Internships = () => {
             placeholder="Search location"
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
-            className="w-full border border-[#a7bc5b] focus:border-[#8da242] focus:ring-2 focus:ring-[#8da242]/40 outline-none px-4 py-2 rounded-xl mb-4 transition"
+            className="w-full border border-[#a7bc5b] px-4 py-2 rounded-xl mb-4"
           />
 
           <input
@@ -79,7 +104,7 @@ const Internships = () => {
             placeholder="Minimum Stipend"
             value={stipendFilter}
             onChange={(e) => setStipendFilter(e.target.value)}
-            className="w-full border border-[#a7bc5b] focus:border-[#8da242] focus:ring-2 focus:ring-[#8da242]/40 outline-none px-4 py-2 rounded-xl transition"
+            className="w-full border border-[#a7bc5b] px-4 py-2 rounded-xl"
           />
         </div>
 
@@ -98,7 +123,7 @@ const Internships = () => {
               {filteredInternships.map((internship) => (
                 <div
                   key={internship._id}
-                  className="bg-white/90 backdrop-blur-md border border-[#a7bc5b]/40 rounded-2xl p-6 shadow-lg hover:shadow-xl transition"
+                  className="bg-white/90 border border-[#a7bc5b]/40 rounded-2xl p-6 shadow-lg"
                 >
                   <h3 className="text-xl font-semibold text-[#2d2d2d]">
                     {internship.title}
@@ -113,33 +138,50 @@ const Internships = () => {
                     <span>₹{internship.stipend} /month</span>
                   </div>
 
-                  <div className="flex gap-4 mt-6">
+                  <div className="flex gap-4 mt-6 items-center flex-wrap">
 
                     <Link
                       to={`/internships/${internship._id}`}
-                      className="bg-gradient-to-r from-[#a7bc5b] to-[#8da242] text-white px-5 py-2 rounded-full shadow hover:scale-[1.05] transition-transform"
+                      className="bg-gradient-to-r from-[#a7bc5b] to-[#8da242] text-white px-5 py-2 rounded-full"
                     >
                       View Details
                     </Link>
 
-                    {/* ✅ Admin Only Controls */}
+                    {/* USER APPLY */}
+                    {role === "user" && (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) =>
+                            setSelectedResume(e.target.files[0])
+                          }
+                          className="text-sm"
+                        />
+
+                        <button
+                          onClick={() =>
+                            handleApply(internship._id)
+                          }
+                          disabled={loadingId === internship._id}
+                          className="border border-[#8da242] text-[#8da242] px-5 py-2 rounded-full hover:bg-[#a7bc5b]/30"
+                        >
+                          {loadingId === internship._id
+                            ? "Applying..."
+                            : "Apply"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* ADMIN CONTROLS */}
                     {role === "admin" && (
                       <>
                         <Link
                           to={`/edit-internship/${internship._id}`}
-                          className="border border-[#8da242] text-[#8da242] px-5 py-2 rounded-full hover:bg-[#a7bc5b]/30 transition"
+                          className="border border-[#8da242] text-[#8da242] px-5 py-2 rounded-full"
                         >
                           Edit
                         </Link>
-
-                        <button
-                          onClick={() =>
-                            handleDelete(internship._id)
-                          }
-                          className="border border-[#8da242] text-[#8da242] px-5 py-2 rounded-full hover:bg-[#a7bc5b]/30 transition"
-                        >
-                          Delete
-                        </button>
                       </>
                     )}
 

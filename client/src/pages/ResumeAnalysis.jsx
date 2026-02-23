@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 const ResumeAnalysis = () => {
   const [resume, setResume] = useState(null);
-  const [summary, setSummary] = useState("");
+  const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem("token");
@@ -39,7 +39,7 @@ const ResumeAnalysis = () => {
         return;
       }
 
-      setSummary(data.summary);
+      setAnalysis(data);
 
     } catch (error) {
       alert("Analysis failed");
@@ -73,12 +73,116 @@ const ResumeAnalysis = () => {
           </button>
         </form>
 
-        {summary && (
-          <div className="mt-8 p-6 bg-gray-100 rounded-xl">
-            <h2 className="text-xl font-semibold mb-4">
-              AI Summary
-            </h2>
-            <p className="whitespace-pre-line">{summary}</p>
+        {analysis && (
+          <div className="mt-8 space-y-6">
+
+            {/* BASIC INFO */}
+            <div className="p-6 bg-gray-100 rounded-xl">
+              <h2 className="text-2xl font-bold mb-3">
+                {analysis.fullName || "Name Not Found"}
+              </h2>
+
+              <p><strong>Email:</strong> {analysis.contactInformation?.email || "N/A"}</p>
+              <p><strong>Phone:</strong> {analysis.contactInformation?.phone || "N/A"}</p>
+              <p><strong>Location:</strong> {analysis.contactInformation?.location || "N/A"}</p>
+              <p>
+                <strong>LinkedIn:</strong>{" "}
+                {analysis.contactInformation?.linkedin ? (
+                  <a
+                    href={analysis.contactInformation.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    View Profile
+                  </a>
+                ) : (
+                  "N/A"
+                )}
+              </p>
+
+              <p className="mt-3 font-semibold text-green-700">
+                ATS Score: {analysis.atsScore ?? 0}/100
+              </p>
+            </div>
+
+            {/* SUMMARY */}
+            {analysis.professionalSummary && (
+              <div className="p-6 bg-gray-100 rounded-xl">
+                <h2 className="text-xl font-semibold mb-3">
+                  Professional Summary
+                </h2>
+                <p className="whitespace-pre-line">
+                  {analysis.professionalSummary}
+                </p>
+              </div>
+            )}
+
+            {/* TECHNICAL SKILLS */}
+            {analysis.technicalSkills?.length > 0 && (
+              <div className="p-6 bg-gray-100 rounded-xl">
+                <h2 className="text-xl font-semibold mb-3">
+                  Technical Skills
+                </h2>
+                <ul className="list-disc pl-6">
+                  {analysis.technicalSkills.map((skill, index) => (
+                    <li key={index}>{skill}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* SOFT SKILLS */}
+            {analysis.softSkills?.length > 0 && (
+              <div className="p-6 bg-gray-100 rounded-xl">
+                <h2 className="text-xl font-semibold mb-3">
+                  Soft Skills
+                </h2>
+                <ul className="list-disc pl-6">
+                  {analysis.softSkills.map((skill, index) => (
+                    <li key={index}>{skill}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* PROJECTS */}
+            {analysis.projects?.length > 0 && (
+              <div className="p-6 bg-gray-100 rounded-xl">
+                <h2 className="text-xl font-semibold mb-3">
+                  Projects
+                </h2>
+                {analysis.projects.map((project, index) => (
+                  <div key={index} className="mb-4">
+                    <h3 className="font-bold">{project.title}</h3>
+                    <p>{project.description}</p>
+                    {project.technologiesUsed?.length > 0 && (
+                      <p className="text-sm text-gray-600">
+                        Tech: {project.technologiesUsed.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* EDUCATION */}
+            {analysis.education?.length > 0 && (
+              <div className="p-6 bg-gray-100 rounded-xl">
+                <h2 className="text-xl font-semibold mb-3">
+                  Education
+                </h2>
+                {analysis.education.map((edu, index) => (
+                  <div key={index} className="mb-3">
+                    <p className="font-bold">{edu.degree}</p>
+                    <p>{edu.institution}</p>
+                    <p>{edu.year}</p>
+                    <p>{edu.percentageOrCGPA}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
           </div>
         )}
 

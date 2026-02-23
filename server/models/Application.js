@@ -7,15 +7,21 @@ const applicationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     internship: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Internship",
+    },
+
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Job",
+    },
+
+    resume: {
+      type: String,
       required: true,
     },
-    job: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Job",
-},
 
     status: {
       type: String,
@@ -26,7 +32,12 @@ const applicationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model(
-  "Application",
-  applicationSchema
-);
+// ✅ Ensure either internship OR job exists
+applicationSchema.pre("save", function (next) {
+  if (!this.internship && !this.job) {
+    return next(new Error("Application must have internship or job"));
+  }
+  next();
+});
+
+module.exports = mongoose.model("Application", applicationSchema);
