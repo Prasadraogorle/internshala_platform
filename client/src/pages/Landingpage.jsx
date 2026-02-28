@@ -1,66 +1,59 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import manImage from "../assets/image1.png"; // ✅ Import local image
 
 const Landingpage = () => {
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const x = (e.clientX - window.innerWidth / 2) / 25;
+      const y = (e.clientY - window.innerHeight / 2) / 25;
+      setMouse({ x, y });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] 
-    bg-gradient-to-br from-[#ffffff] via-[#a7bc5b]/30 to-[#8da242]/40 
-    flex items-center justify-center px-4">
+    <div className="relative w-full min-h-[calc(100vh-64px)] bg-gradient-to-br from-white via-[#f4f8e8] to-[#e3ecc2] overflow-hidden flex items-center justify-center">
 
-      <div className="max-w-5xl w-full text-center">
+      {/* Background Blobs */}
+      <div className="absolute w-96 h-96 bg-[#a7bc5b]/20 rounded-full -top-20 -left-20 blur-3xl"></div>
+      <div className="absolute w-96 h-96 bg-[#8da242]/20 rounded-full -bottom-20 -right-20 blur-3xl"></div>
 
-        {/* Heading */}
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 leading-tight">
-          Find the right{" "}
-          <span className="text-[#8da242]">Internship</span> or{" "}
-          <span className="text-[#a7bc5b]">Job</span>
-        </h1>
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-20 px-8">
 
-        {/* Subheading */}
-        <p className="text-gray-700 text-lg mb-12">
-          India’s largest internship and job platform for students and freshers
-        </p>
+        {/* LEFT SIDE TEXT */}
+        <div className="max-w-xl text-center md:text-left">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
+            Building Dreams Through{" "}
+            <span className="text-[#8da242]">Internships</span>
+          </h1>
 
-        {/* Search Section */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-14">
+          <p className="text-gray-600 text-lg mb-8">
+            Every application is a step closer to your career.
+            Start exploring opportunities and shape your future.
+          </p>
 
-          <div className="flex items-center bg-white 
-          border border-[#a7bc5b] rounded-xl px-5 py-3 
-          w-full md:w-[420px] shadow-md">
-
-            <i className="bi bi-search text-[#8da242] mr-3 text-lg"></i>
-
-            <input
-              type="text"
-              placeholder="Search internships or jobs"
-              className="outline-none w-full text-gray-700"
-            />
-          </div>
-
-          <button className="bg-gradient-to-r from-[#8da242] to-[#a7bc5b] 
-          text-white px-8 py-3 rounded-xl shadow-md 
-          hover:opacity-90 transition duration-300">
-            Search
+          <button className="bg-gradient-to-r from-[#8da242] to-[#a7bc5b] text-white px-8 py-3 rounded-2xl shadow-xl hover:scale-105 transition duration-300">
+            Get Started
           </button>
-
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex justify-center gap-6 mt-6">
-
-          <button className="border-2 border-[#8da242] 
-          text-[#8da242] px-8 py-3 rounded-xl 
-          hover:bg-[#8da242] hover:text-white 
-          transition duration-300 shadow-sm">
-            Explore Internships
-          </button>
-
-          <button className="border-2 border-[#a7bc5b] 
-          text-[#8da242] px-8 py-3 rounded-xl 
-          hover:bg-[#a7bc5b] hover:text-white 
-          transition duration-300 shadow-sm">
-            Explore Jobs
-          </button>
-
+        {/* RIGHT SIDE IMAGE (Local) */}
+        <div
+          style={{
+            transform: `translate(${mouse.x}px, ${mouse.y}px)`
+          }}
+          className="transition-transform duration-150"
+        >
+          <img
+            src={manImage}   // ✅ Use imported image
+            alt="Man applying for internship"
+            className="w-[420px] drop-shadow-2xl select-none"
+            draggable="false"
+          />
         </div>
 
       </div>

@@ -67,8 +67,8 @@ const AdminLogin = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-  credential: credentialResponse.credential,
-}),
+          credential: credentialResponse.credential,
+        }),
       });
 
       const data = await res.json();
@@ -81,52 +81,81 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-[#ffffff] via-[#a7bc5b]/30 to-[#8da242]/40 px-6">
-      <div className="w-full max-w-md bg-white/90 border border-[#a7bc5b]/40 rounded-2xl shadow-xl p-8">
-        <h2 className="text-3xl font-bold text-center mb-8 text-[#8da242]">
-          Admin Login
-        </h2>
+    <div className="min-h-screen flex">
 
-        {error && (
-          <p className="text-center mb-4 text-red-500">{error}</p>
-        )}
+      {/* LEFT SIDE - DESCRIPTION */}
+      <div className="hidden md:flex w-1/2 bg-gradient-to-br from-[#8da242] to-[#a7bc5b] text-white p-12 flex-col justify-center">
+        <h1 className="text-4xl font-bold mb-6">
+          Welcome to InternHub Admin Portal
+        </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <input
-            type="email"
-            name="email"
-            placeholder="Admin Email"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full border border-[#a7bc5b] px-4 py-3 rounded-xl"
-          />
+        <p className="text-lg mb-6 leading-relaxed">
+          InternHub is a modern internship management platform that helps
+          organizations manage internship postings, applications, and
+          student recruitment efficiently.
+        </p>
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full border border-[#a7bc5b] px-4 py-3 rounded-xl"
-          />
+        <ul className="space-y-4 text-lg">
+          <li>✔ Manage Internship Listings</li>
+          <li>✔ Track Student Applications</li>
+          <li>✔ Secure Role-Based Access</li>
+          <li>✔ Google Authentication Enabled</li>
+        </ul>
 
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-[#8da242] to-[#a7bc5b] text-white py-3 rounded-full"
-          >
-            Login as Admin
-          </button>
-        </form>
+        <div className="mt-10 text-sm opacity-80">
+          Empowering recruitment with simplicity.
+        </div>
+      </div>
 
-        <div className="my-6 text-center">OR</div>
+      {/* RIGHT SIDE - LOGIN */}
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-gradient-to-br from-[#ffffff] via-[#a7bc5b]/30 to-[#8da242]/40 px-6">
+        <div className="w-full max-w-md bg-white/90 border border-[#a7bc5b]/40 rounded-2xl shadow-xl p-8">
+          
+          <h2 className="text-3xl font-bold text-center mb-8 text-[#8da242]">
+            Admin Login
+          </h2>
 
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError("Google Login Failed")}
-          />
+          {error && (
+            <p className="text-center mb-4 text-red-500">{error}</p>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <input
+              type="email"
+              name="email"
+              placeholder="Admin Email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full border border-[#a7bc5b] px-4 py-3 rounded-xl"
+            />
+
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full border border-[#a7bc5b] px-4 py-3 rounded-xl"
+            />
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-[#8da242] to-[#a7bc5b] text-white py-3 rounded-full"
+            >
+              Login as Admin
+            </button>
+          </form>
+
+          <div className="my-6 text-center">OR</div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Login Failed")}
+            />
+          </div>
         </div>
       </div>
     </div>
