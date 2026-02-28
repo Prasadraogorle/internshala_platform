@@ -20,6 +20,7 @@ import ResumeAnalysis from "./pages/ResumeAnalysis"; // ✅ FIXED IMPORT
 
 import AdminRoute from "./components/AdminRoute";
 import UserRoute from "./components/UserRoute";
+import Profile from "./pages/Profile";
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -83,6 +84,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/user-login" element={<UserLogin />} />
           <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/profile" element={<Profile />} />
 
           {/* Admin Routes */}
           <Route

@@ -10,6 +10,9 @@ const path = require("path");
 const fs = require("fs");
 const pdf = require("pdf-parse");
 const axios = require("axios");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
 
 const User = require("./models/User");
 const Internship = require("./models/Internship");
@@ -22,18 +25,56 @@ const admin = require("./middleware/admin");
 const app = express();
 app.use(cors());
 app.use(express.json());
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Internship & Job Portal API",
+      version: "1.0.0",
+      description: "Complete API documentation for Internship & Job Portal Backend",
+    },
+    servers: [
+      {
+        url: "http://localhost:5000",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+  },
+  apis: ["./index.js"],
+};
+
+const swaggerSpec = swaggerJsDoc(swaggerOptions);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /* =========================
-   OPENROUTER KEY CHECK
+   GEMINI KEY CHECK
 ========================= */
-if (!process.env.OPENROUTER_API_KEY) {
-  throw new Error("OPENROUTER_API_KEY is missing");
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is missing");
 }
 
 console.log(
-  "OPENROUTER KEY:",
-  process.env.OPENROUTER_API_KEY?.slice(0, 10)
+  "GEMINI KEY:",
+  process.env.GEMINI_API_KEY?.slice(0, 10)
 );
+
+/* =========================
+   GEMINI INIT
+========================= */
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const geminiModel = genAI.getGenerativeModel({
+  model: "gemini-2.5-flash"
+});
 
 /* =========================
    UPLOAD SETUP
@@ -74,15 +115,64 @@ mongoose
 /* =========================
    FETCH DATA
 ========================= */
+/**
+ * @swagger
+ * /api/internships:
+ *   get:
+ *     summary: Get all internships
+ *     tags: [Internships]
+ *     responses:
+ *       200:
+ *         description: List of internships
+ */
 app.get("/api/internships", async (req, res) => {
   const data = await Internship.find();
   res.json(data);
 });
+/**
+ * @swagger
+ * /api/jobs:
+ *   get:
+ *     summary: Get all jobs
+ *     tags: [Jobs]
+ *     responses:
+ *       200:
+ *         description: List of jobs
+ */
 
 app.get("/api/jobs", async (req, res) => {
   const data = await Job.find();
   res.json(data);
 });
+
+/**
+ * @swagger
+ * /api/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Prasad
+ *               email:
+ *                 type: string
+ *                 example: prasad@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: User registered successfully
+ *       400:
+ *         description: User already exists
+ */
 
 /* =========================
    AUTH REGISTER
@@ -106,7 +196,31 @@ app.post("/api/register", async (req, res) => {
   await user.save();
   res.json({ message: "User registered successfully" });
 });
-
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Invalid credentials
+ */
 /* =========================
    AUTH LOGIN
 ========================= */
@@ -129,6 +243,25 @@ app.post("/api/login", async (req, res) => {
 
   res.json({ token });
 });
+/**
+ * @swagger
+ * /api/google-login:
+ *   post:
+ *     summary: Login using Google
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               credential:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Google login successful
+ */
 
 /* =========================
    GOOGLE LOGIN
@@ -172,7 +305,18 @@ app.post("/api/google-login", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+/**
+ * @swagger
+ * /api/internships:
+ *   post:
+ *     summary: Create new internship (Admin only)
+ *     tags: [Internships]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Internship created
+ */
 /* =========================
    ADMIN CREATE
 ========================= */
@@ -181,13 +325,52 @@ app.post("/api/internships", auth, admin, async (req, res) => {
   await data.save();
   res.status(201).json(data);
 });
+/**
+ * @swagger
+ * /api/jobs:
+ *   post:
+ *     summary: Create new job (Admin only)
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Job created
+ */
 
 app.post("/api/jobs", auth, admin, async (req, res) => {
   const data = new Job(req.body);
   await data.save();
   res.status(201).json(data);
 });
-
+/**
+ * @swagger
+ * /api/apply/{internshipId}:
+ *   post:
+ *     summary: Apply for internship
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: internshipId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Applied successfully
+ */
 /* =========================
    APPLY INTERNSHIP
 ========================= */
@@ -220,6 +403,34 @@ app.post(
     res.json({ message: "Applied successfully" });
   }
 );
+/**
+ * @swagger
+ * /api/apply-job/{jobId}:
+ *   post:
+ *     summary: Apply for job
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Job applied successfully
+ */
 
 /* =========================
    APPLY JOB
@@ -253,9 +464,30 @@ app.post(
     res.json({ message: "Job applied successfully" });
   }
 );
-
+/**
+ * @swagger
+ * /api/analyze-resume:
+ *   post:
+ *     summary: Analyze resume using AI (Gemini)
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Resume analyzed successfully
+ */
 /* =========================
-   RESUME ANALYZER (OPENROUTER)
+   RESUME ANALYZER (GEMINI)
 ========================= */
 app.post(
   "/api/analyze-resume",
@@ -272,11 +504,11 @@ app.post(
       let resumeText = pdfData.text.slice(0, 6000);
 
       const prompt = `
-You are a senior HR manager and ATS (Applicant Tracking System) expert.
+You are a professional ATS resume parser.
 
-Carefully analyze the following resume and extract ALL relevant information in detail.
+Carefully extract information from the resume below.
 
-Return ONLY valid JSON in this exact structure:
+Return ONLY valid JSON in this exact format:
 
 {
   "fullName": "",
@@ -288,32 +520,12 @@ Return ONLY valid JSON in this exact structure:
     "portfolio": ""
   },
   "professionalSummary": "",
-  "education": [
-    {
-      "degree": "",
-      "institution": "",
-      "year": "",
-      "percentageOrCGPA": ""
-    }
-  ],
-  "workExperience": [
-    {
-      "jobTitle": "",
-      "company": "",
-      "duration": "",
-      "keyResponsibilities": []
-    }
-  ],
+  "education": [],
+  "workExperience": [],
   "technicalSkills": [],
   "softSkills": [],
   "toolsAndTechnologies": [],
-  "projects": [
-    {
-      "title": "",
-      "description": "",
-      "technologiesUsed": []
-    }
-  ],
+  "projects": [],
   "certifications": [],
   "achievements": [],
   "strengths": [],
@@ -322,60 +534,102 @@ Return ONLY valid JSON in this exact structure:
   "atsScore": 0
 }
 
-STRICT RULES:
-- Extract real data only from the resume.
-- Do NOT invent information.
-- If data is missing, return empty string "" or empty array [].
+Rules:
+- Extract real data only.
+- Do NOT invent anything.
+- If missing, use "" or [].
 - ATS score must be between 0 and 100.
-- Do NOT include markdown.
-- Do NOT include explanations.
-- Return ONLY pure JSON.
+- Return PURE JSON only.
+- No markdown.
+- No explanation.
 
 Resume:
 ${resumeText}
 `;
 
-      const result = await axios.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          model: "mistralai/mistral-7b-instruct",
-          messages: [{ role: "user", content: prompt }]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-
-      let responseText =
-        result.data.choices[0].message.content;
-
-      responseText = responseText
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-
-      if (!jsonMatch) {
-        return res.status(500).json({ message: "Invalid AI response format" });
+const result = await axios.post(
+  `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+  {
+    contents: [
+      {
+        parts: [{ text: prompt }]
       }
+    ],
+    generationConfig: {
+  temperature: 0.2,
+},
+  },
+  {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  }
+);
 
-      const parsed = JSON.parse(jsonMatch[0]);
+let responseText =
+  result.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-      res.json(parsed);
+responseText = responseText
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
 
+// 🔍 Debug once (you can remove later)
+console.log("AI RAW RESPONSE:\n", responseText);
+
+let parsed;
+
+try {
+  // First attempt: direct parse
+  parsed = JSON.parse(responseText);
+} catch (err) {
+  console.log("⚠ Direct JSON parse failed. Attempting safe extraction...");
+
+  const firstBrace = responseText.indexOf("{");
+  const lastBrace = responseText.lastIndexOf("}");
+
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    const possibleJson = responseText.substring(firstBrace, lastBrace + 1);
+
+    try {
+      parsed = JSON.parse(possibleJson);
+    } catch (innerErr) {
+      console.log("❌ JSON extraction failed:", innerErr.message);
+      return res.status(500).json({
+        message: "Invalid AI JSON format",
+        rawOutput: responseText
+      });
+    }
+  } else {
+    return res.status(500).json({
+      message: "No JSON found in AI response",
+      rawOutput: responseText
+    });
+  }
+}
+
+res.json(parsed);
     } catch (error) {
       console.log(
-        "❌ OPENROUTER ERROR:",
+        "❌ GEMINI ERROR:",
         error.response?.data || error.message
       );
       res.status(500).json({ message: "AI analysis failed" });
     }
   }
 );
+/**
+ * @swagger
+ * /api/my-applications:
+ *   get:
+ *     summary: Get logged-in user's applications
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user applications
+ */
 /* =========================
    VIEW APPLICATIONS
 ========================= */
@@ -388,7 +642,18 @@ app.get("/api/my-applications", auth, async (req, res) => {
 
   res.json(data);
 });
-
+/**
+ * @swagger
+ * /api/applications:
+ *   get:
+ *     summary: Get all applications (Admin only)
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all applications
+ */
 app.get("/api/applications", auth, admin, async (req, res) => {
   const data = await Application.find()
     .populate("user", "name email")
@@ -397,7 +662,148 @@ app.get("/api/applications", auth, admin, async (req, res) => {
 
   res.json(data);
 });
+/**
+ * @swagger
+ * /api/profile:
+ *   get:
+ *     summary: Get logged-in user profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile
+ */
+app.get("/api/profile", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
+app.put("/api/profile", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
 
+    Object.assign(user, req.body);
+
+    await user.save();
+
+    res.json({ message: "Profile updated successfully", user });
+  } catch (err) {
+    res.status(500).json({ message: "Profile update failed" });
+  }
+});
+/**
+ * @swagger
+ * /api/profile/auto-fill:
+ *   post:
+ *     summary: Auto-fill profile from resume using AI
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Profile auto-filled successfully
+ */
+app.post(
+  "/api/profile/auto-fill",
+  auth,
+  upload.single("resume"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Resume required" });
+      }
+
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const pdfData = await pdf(fileBuffer);
+      let resumeText = pdfData.text.slice(0, 6000);
+
+      const prompt = `
+Extract structured profile information from this resume.
+
+Return ONLY valid JSON:
+
+{
+  "name": "",
+  "phone": "",
+  "location": "",
+  "skills": [],
+  "education": [
+    {
+      "degree": "",
+      "college": "",
+      "startYear": "",
+      "endYear": ""
+    }
+  ],
+  "experience": [
+    {
+      "jobTitle": "",
+      "company": "",
+      "startDate": "",
+      "endDate": "",
+      "description": ""
+    }
+  ],
+  "projects": [
+    {
+      "title": "",
+      "description": "",
+      "technologies": []
+    }
+  ]
+}
+
+Rules:
+- No explanation.
+- No markdown.
+- No extra text.
+- If data missing use "" or [].
+
+Resume:
+${resumeText}
+`;
+
+      const result = await geminiModel.generateContent(prompt);
+      let text = result.response.text();
+
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      const parsed = JSON.parse(text);
+
+      res.json(parsed);
+
+    } catch (err) {
+      res.status(500).json({ message: "Resume auto-fill failed" });
+    }
+  }
+);
+app.post("/api/profile/photo", auth, upload.single("photo"), async (req, res) => {
+  const user = await User.findById(req.user.userId);
+  user.profilePhoto = req.file.path;
+  await user.save();
+  res.json({ photo: req.file.path });
+});
+
+app.post("/api/profile/video", auth, upload.single("video"), async (req, res) => {
+  const user = await User.findById(req.user.userId);
+  user.introVideo = req.file.path;
+  await user.save();
+  res.json({ video: req.file.path });
+});
 /* =========================
    SERVER START
 ========================= */
