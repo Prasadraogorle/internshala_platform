@@ -70,29 +70,41 @@ const AdminDashboard = () => {
       console.log(err);
     }
   };
-
-  const updateStatus = async (id, status) => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/applications/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (res.ok) {
-        fetchApplications();
+const updateStatus = async (id, status) => {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/applications/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
       }
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    );
 
+    const text = await res.text(); // 🔥 safer
+    console.log("RAW RESPONSE:", text);
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      alert("Server returned non-JSON response");
+      return;
+    }
+
+    if (res.ok) {
+      alert("Status updated successfully!");
+      fetchApplications();
+    } else {
+      alert(data.message || "Update failed");
+    }
+  } catch (err) {
+    console.log("ERROR:", err);
+    alert("Error updating status");
+  }
+};
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-[#ffffff] via-[#a7bc5b]/30 to-[#8da242]/40 py-10 px-6">
 
@@ -193,6 +205,32 @@ const AdminDashboard = () => {
                   {app.status}
                 </span>
               </p>
+                      {/* Resume Section */}
+              <div className="mt-3 flex gap-4 items-center">
+  {app?.resume ? (
+    <>
+      <a
+        href={`http://localhost:5000/${app.resume.replace(/\\/g, "/")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 font-semibold underline"
+      >
+        📄 View Resume
+      </a>
+
+      <a
+        href={`http://localhost:5000/api/download/${app.resume
+          .split(/[/\\]/)
+          .pop()}`}
+        className="text-green-600 font-semibold underline"
+      >
+        ⬇ Download
+      </a>
+    </>
+  ) : (
+    <span className="text-red-500">No Resume</span>
+  )}
+</div>
 
               <div className="mt-5 flex gap-4">
                 <button

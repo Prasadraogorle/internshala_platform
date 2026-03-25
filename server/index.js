@@ -25,6 +25,7 @@ const admin = require("./middleware/admin");
 const app = express();
 app.use(cors());
 app.use(express.json());
+console.log("SERVER FILE LOADED");
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -662,6 +663,9 @@ app.get("/api/applications", auth, admin, async (req, res) => {
 
   res.json(data);
 });
+/* =========================
+   UPDATE APPLICATION STATUS
+========================= */
 /**
  * @swagger
  * /api/profile:
@@ -681,6 +685,15 @@ app.get("/api/profile", auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch profile" });
   }
+});
+app.get("/api/download/:filename", (req, res) => {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
+  }
+
+  res.download(filePath);
 });
 app.put("/api/profile", auth, async (req, res) => {
   try {
@@ -803,6 +816,34 @@ app.post("/api/profile/video", auth, upload.single("video"), async (req, res) =>
   user.introVideo = req.file.path;
   await user.save();
   res.json({ video: req.file.path });
+});
+app.put("/api/applications/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const updated = await Application.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.json({
+      message: "Status updated successfully",
+      application: updated,
+    });
+
+  } catch (err) {
+    console.log("ERROR:", err.message);
+    res.status(500).json({ message: "Failed to update status" });
+  }
 });
 /* =========================
    SERVER START
